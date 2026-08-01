@@ -68,9 +68,29 @@ const INITIAL: FormState = {
   specialHandlingNotes: '',
 };
 
+interface CopyRow {
+  email: string;
+  name: string;
+  type: 'CC' | 'BCC';
+}
+
 export default function NewInquiryPage() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>(INITIAL);
+  const [copies, setCopies] = useState<CopyRow[]>([]);
+  const [copyDraft, setCopyDraft] = useState<CopyRow>({
+    email: '',
+    name: '',
+    type: 'CC',
+  });
+
+  const addCopy = () => {
+    const email = copyDraft.email.trim().toLowerCase();
+    if (!email) return;
+    if (copies.some((row) => row.email.toLowerCase() === email)) return;
+    setCopies((previous) => [...previous, { ...copyDraft, email }]);
+    setCopyDraft({ email: '', name: '', type: copyDraft.type });
+  };
 
   const { data: companies, isLoading } = useQuery({
     queryKey: ['connections', 'available'],
@@ -98,6 +118,13 @@ export default function NewInquiryPage() {
     referenceNumber: form.referenceNumber || undefined,
     priority: form.priority,
     specialHandlingNotes: form.specialHandlingNotes || undefined,
+    recipients: copies.length
+      ? copies.map((row) => ({
+          email: row.email,
+          name: row.name || undefined,
+          type: row.type,
+        }))
+      : undefined,
   });
 
   const create = useMutation({
@@ -164,6 +191,123 @@ export default function NewInquiryPage() {
             ))}
           </Select>
         </Field>
+      </Card>
+
+      <Card
+        title="Who else should be copied"
+        action={
+          <span className="text-xs font-normal text-slate-500">
+            Optional
+          </span>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Anyone added here is copied on the submission email and every update
+            after it. They do not need an account — an email address is enough.
+          </p>
+
+          {copies.length > 0 && (
+            <ul className="divide-y divide-slate-100 rounded-md ring-1 ring-slate-200">
+              {copies.map((row) => (
+                <li
+                  key={row.email}
+                  className="flex items-center gap-2 px-3 py-2 text-sm"
+                >
+                  <span
+                    className={
+                      row.type === 'BCC'
+                        ? 'rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800'
+                        : 'rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600'
+                    }
+                  >
+                    {row.type}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-slate-700">
+                    {row.name ? `${row.name} · ` : ''}
+                    {row.email}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCopies((previous) =>
+                        previous.filter((item) => item.email !== row.email),
+                      )
+                    }
+                    className="text-xs text-slate-400 hover:text-rose-600"
+                  >
+                    remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_1fr_9rem_auto] sm:items-end">
+            <Field label="Email">
+              <Input
+                type="email"
+                value={copyDraft.email}
+                onChange={(e) =>
+                  setCopyDraft((previous) => ({
+                    ...previous,
+                    email: e.target.value,
+                  }))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    // Enter here must not submit the whole inquiry.
+                    e.preventDefault();
+                    addCopy();
+                  }
+                }}
+                placeholder="warehouse@company.com"
+              />
+            </Field>
+            <Field label="Name">
+              <Input
+                value={copyDraft.name}
+                onChange={(e) =>
+                  setCopyDraft((previous) => ({
+                    ...previous,
+                    name: e.target.value,
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Type">
+              <Select
+                value={copyDraft.type}
+                onChange={(e) =>
+                  setCopyDraft((previous) => ({
+                    ...previous,
+                    type: e.target.value as 'CC' | 'BCC',
+                  }))
+                }
+              >
+                <option value="CC">CC</option>
+                <option value="BCC">BCC</option>
+              </Select>
+            </Field>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addCopy}
+              disabled={!copyDraft.email.trim()}
+            >
+              Add
+            </Button>
+          </div>
+
+          {copies.some((row) => row.type === 'BCC') && (
+            <Alert tone="warning">
+              BCC recipients are hidden from everyone else on this inquiry,
+              including the company you are sending it to. The addition is still
+              recorded in the audit log, and if a BCC recipient replies, their
+              reply is held for review rather than posted.
+            </Alert>
+          )}
+        </div>
       </Card>
 
       <Card title="Route">
