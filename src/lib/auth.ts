@@ -23,9 +23,7 @@ export function useLogin() {
       post<{ user: AuthUser }>('/auth/login', credentials),
     onSuccess: (data) => {
       queryClient.setQueryData(['session'], data);
-      router.replace(
-        data.user.role === 'SUPER_ADMIN' ? '/admin/companies' : '/inquiries',
-      );
+      router.replace('/inquiries');
     },
   });
 }
@@ -43,7 +41,7 @@ export function useLogout() {
   });
 }
 
-export const isCompanyAdmin = (user?: AuthUser) =>
-  user?.role === 'COMPANY_ADMIN';
+export const isUnitAdmin = (user?: AuthUser) =>
+  user?.role === 'UNIT_ADMIN';
 
-export const isSuperAdmin = (user?: AuthUser) => user?.role === 'SUPER_ADMIN';
+export const isOrgAdmin = (user?: AuthUser) => user?.role === 'ORG_ADMIN';

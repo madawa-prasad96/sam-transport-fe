@@ -10,14 +10,14 @@ import {
   Spinner,
 } from '@/components/ui';
 import { del, get } from '@/lib/api';
-import { isCompanyAdmin, useSession } from '@/lib/auth';
+import { isUnitAdmin, useSession } from '@/lib/auth';
 import { formatDateTime } from '@/lib/format';
 import type { QuarantineItem } from '@/lib/types';
 
 export default function QuarantinePage() {
   const queryClient = useQueryClient();
   const { data: session } = useSession();
-  const admin = isCompanyAdmin(session?.user);
+  const admin = isUnitAdmin(session?.user);
 
   const { data, isLoading } = useQuery({
     queryKey: ['quarantine'],

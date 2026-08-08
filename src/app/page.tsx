@@ -15,9 +15,7 @@ export default function Home() {
       router.replace('/login');
       return;
     }
-    router.replace(
-      data.user.role === 'SUPER_ADMIN' ? '/admin/companies' : '/inquiries',
-    );
+    router.replace('/inquiries');
   }, [data, isError, isLoading, router]);
 
   return <Spinner />;

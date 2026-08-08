@@ -16,7 +16,7 @@ import {
 import { get, patch, post } from '@/lib/api';
 import { useSession } from '@/lib/auth';
 import { formatDate, relativeTime } from '@/lib/format';
-import type { CompanyUser } from '@/lib/types';
+import type { OrgUser } from '@/lib/types';
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
@@ -32,12 +32,12 @@ export default function UsersPage() {
     email: '',
     fullName: '',
     phone: '',
-    role: 'COMPANY_USER',
+    role: 'UNIT_USER',
   });
 
   const { data, isLoading } = useQuery({
     queryKey: ['users'],
-    queryFn: () => get<CompanyUser[]>('/users'),
+    queryFn: () => get<OrgUser[]>('/users'),
   });
 
   const invalidate = () =>
@@ -51,7 +51,7 @@ export default function UsersPage() {
       }),
     onSuccess: () => {
       setInviteOpen(false);
-      setForm({ email: '', fullName: '', phone: '', role: 'COMPANY_USER' });
+      setForm({ email: '', fullName: '', phone: '', role: 'UNIT_USER' });
       invalidate();
     },
   });
@@ -95,6 +95,7 @@ export default function UsersPage() {
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Name</th>
+                  <th className="px-4 py-2.5 font-medium">Unit</th>
                   <th className="px-4 py-2.5 font-medium">Role</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
                   <th className="px-4 py-2.5 font-medium">Last sign-in</th>
@@ -119,6 +120,9 @@ export default function UsersPage() {
                           {user.email}
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-slate-700">
+                        {user.unit?.name ?? '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <Select
                           value={user.role}
@@ -131,8 +135,8 @@ export default function UsersPage() {
                           }
                           className="max-w-44"
                         >
-                          <option value="COMPANY_ADMIN">Company admin</option>
-                          <option value="COMPANY_USER">Company user</option>
+                          <option value="UNIT_ADMIN">Unit admin</option>
+                          <option value="UNIT_USER">Unit user</option>
                         </Select>
                       </td>
                       <td className="px-4 py-3">
@@ -234,8 +238,8 @@ export default function UsersPage() {
               value={form.role}
               onChange={(e) => set('role')(e.target.value)}
             >
-              <option value="COMPANY_USER">Company user</option>
-              <option value="COMPANY_ADMIN">Company admin</option>
+              <option value="UNIT_USER">Unit user</option>
+              <option value="UNIT_ADMIN">Unit admin</option>
             </Select>
           </Field>
           <div className="flex justify-end gap-2">

@@ -92,11 +92,11 @@ export default function InquiryDetailPage() {
   }
 
   const user = session!.user;
-  const isRequester = inquiry.requesterCompanyId === user.companyId;
-  const isProvider = inquiry.providerCompanyId === user.companyId;
+  const isRequester = inquiry.requesterUnitId === user.unitId;
+  const isProvider = inquiry.providerUnitId === user.unitId;
   const counterparty = isRequester
-    ? inquiry.providerCompany
-    : inquiry.requesterCompany;
+    ? inquiry.providerUnit
+    : inquiry.requesterUnit;
 
   const closed =
     inquiry.status === 'COMPLETED' || inquiry.status === 'CANCELLED';

@@ -249,7 +249,7 @@ export function RecipientsPanel({
     inquiry.recipients.filter((r) => r.type === kind);
 
   const canRemove = (recipient: Recipient) =>
-    recipient.type !== 'TO' && recipient.addedByCompanyId === user.companyId;
+    recipient.type !== 'TO' && recipient.addedByUnitId === user.unitId;
 
   return (
     <div className="space-y-4">

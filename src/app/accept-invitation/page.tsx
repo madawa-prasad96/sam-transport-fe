@@ -17,10 +17,6 @@ function AcceptInvitationForm() {
     phone: '',
     password: '',
     confirm: '',
-    companyName: '',
-    addressLine: '',
-    country: '',
-    primaryContactPhone: '',
   });
   const [mismatch, setMismatch] = useState(false);
 
@@ -31,12 +27,6 @@ function AcceptInvitationForm() {
         password: form.password,
         fullName: form.fullName || undefined,
         phone: form.phone || undefined,
-        // Only meaningful for a company invitation; the API ignores them for
-        // a plain user invite.
-        companyName: form.companyName || undefined,
-        addressLine: form.addressLine || undefined,
-        country: form.country || undefined,
-        primaryContactPhone: form.primaryContactPhone || undefined,
       }),
     onSuccess: () => router.replace('/inquiries'),
   });
@@ -109,38 +99,6 @@ function AcceptInvitationForm() {
         </Field>
       </div>
 
-      <details className="rounded-md bg-slate-50 p-3 ring-1 ring-slate-200">
-        <summary className="cursor-pointer text-sm font-medium text-slate-700">
-          Setting up a company? Complete its profile
-        </summary>
-        <div className="mt-4 space-y-4">
-          <Field label="Company name">
-            <Input
-              value={form.companyName}
-              onChange={(e) => set('companyName')(e.target.value)}
-            />
-          </Field>
-          <Field label="Address">
-            <Input
-              value={form.addressLine}
-              onChange={(e) => set('addressLine')(e.target.value)}
-            />
-          </Field>
-          <Field label="Country">
-            <Input
-              value={form.country}
-              onChange={(e) => set('country')(e.target.value)}
-            />
-          </Field>
-          <Field label="Company phone">
-            <Input
-              value={form.primaryContactPhone}
-              onChange={(e) => set('primaryContactPhone')(e.target.value)}
-            />
-          </Field>
-        </div>
-      </details>
-
       <Button type="submit" loading={accept.isPending} className="w-full">
         Accept invitation
       </Button>
@@ -154,10 +112,10 @@ export default function AcceptInvitationPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <h1 className="text-xl font-semibold text-slate-900">
-            Accept your invitation
+            Set up your account
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Set a password to finish joining the platform.
+            Set a password to finish setting up your SAM Transport account.
           </p>
         </div>
         <Suspense fallback={<Spinner />}>

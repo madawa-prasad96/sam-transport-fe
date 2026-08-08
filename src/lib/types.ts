@@ -1,7 +1,6 @@
-export type UserRole = 'SUPER_ADMIN' | 'COMPANY_ADMIN' | 'COMPANY_USER';
+export type UserRole = 'ORG_ADMIN' | 'UNIT_ADMIN' | 'UNIT_USER';
 export type UserStatus = 'INVITED' | 'ACTIVE' | 'DEACTIVATED';
-export type CompanyStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED';
-export type ConnectionStatus = 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REJECTED';
+export type UnitStatus = 'ACTIVE' | 'INACTIVE';
 
 export type InquiryStatus =
   | 'DRAFT'
@@ -46,10 +45,11 @@ export interface AuthUser {
   email: string;
   fullName: string;
   role: UserRole;
-  companyId: string | null;
+  /** Every user belongs to a unit, org admins included. */
+  unitId: string;
 }
 
-export interface Company {
+export interface Unit {
   id: string;
   name: string;
   registrationNumber?: string | null;
@@ -58,9 +58,10 @@ export interface Company {
   primaryContactName: string;
   primaryContactEmail: string;
   primaryContactPhone: string;
+  code: string;
   timezone: string;
   defaultWeightUom: WeightUom;
-  status: CompanyStatus;
+  status: UnitStatus;
   createdAt: string;
   _count?: {
     users: number;
@@ -69,7 +70,13 @@ export interface Company {
   };
 }
 
-export interface CompanyUser {
+export interface UnitRef {
+  id: string;
+  name: string;
+  code: string;
+}
+
+export interface OrgUser {
   id: string;
   email: string;
   fullName: string;
@@ -77,23 +84,10 @@ export interface CompanyUser {
   role: UserRole;
   status: UserStatus;
   notificationPreference: 'INSTANT' | 'DAILY_DIGEST';
+  unitId: string;
+  unit?: UnitRef;
   lastLoginAt?: string | null;
   createdAt: string;
-}
-
-export interface Connection {
-  id: string;
-  status: ConnectionStatus;
-  createdAt: string;
-  initiatedByUs: boolean;
-  counterparty: {
-    id: string;
-    name: string;
-    country: string;
-    status: CompanyStatus;
-    primaryContactName: string;
-    primaryContactEmail: string;
-  };
 }
 
 export interface VehicleDetail {
@@ -116,7 +110,7 @@ export interface Recipient {
   kind: 'USER' | 'EXTERNAL';
   email: string;
   name?: string | null;
-  addedByCompanyId: string;
+  addedByUnitId: string;
   addedByUserId?: string | null;
 }
 
@@ -131,11 +125,11 @@ export interface InquirySummary {
   readyByAt: string;
   requiredByAt: string;
   referenceNumber?: string | null;
-  requesterCompanyId: string;
-  providerCompanyId: string;
+  requesterUnitId: string;
+  providerUnitId: string;
   createdAt: string;
-  requesterCompany: { id: string; name: string };
-  providerCompany: { id: string; name: string };
+  requesterUnit: { id: string; name: string };
+  providerUnit: { id: string; name: string };
   createdBy: { id: string; fullName: string };
   vehicleDetails: VehicleDetail[];
 }
@@ -176,7 +170,7 @@ export interface Comment {
   authorName?: string | null;
   authorEmail?: string | null;
   createdAt: string;
-  author?: { id: string; fullName: string; companyId: string | null } | null;
+  author?: { id: string; fullName: string; unitId: string } | null;
 }
 
 export interface EmailLogEntry {

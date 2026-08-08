@@ -23,7 +23,7 @@ import {
 } from '@/lib/types';
 
 interface FormState {
-  providerCompanyId: string;
+  providerUnitId: string;
   pickupLocation: string;
   pickupContactName: string;
   pickupContactPhone: string;
@@ -46,7 +46,7 @@ interface FormState {
 }
 
 const INITIAL: FormState = {
-  providerCompanyId: '',
+  providerUnitId: '',
   pickupLocation: '',
   pickupContactName: '',
   pickupContactPhone: '',
@@ -92,13 +92,14 @@ export default function NewInquiryPage() {
     setCopyDraft({ email: '', name: '', type: copyDraft.type });
   };
 
-  const { data: companies, isLoading } = useQuery({
-    queryKey: ['connections', 'available'],
-    queryFn: () => get<{ id: string; name: string }[]>('/connections/available'),
+  const { data: units, isLoading } = useQuery({
+    queryKey: ['units', 'addressable'],
+    queryFn: () =>
+      get<{ id: string; name: string; code: string }[]>('/units/addressable'),
   });
 
   const buildPayload = () => ({
-    providerCompanyId: form.providerCompanyId,
+    providerUnitId: form.providerUnitId,
     pickupLocation: form.pickupLocation,
     pickupContactName: form.pickupContactName,
     pickupContactPhone: form.pickupContactPhone,
@@ -141,7 +142,7 @@ export default function NewInquiryPage() {
 
   if (isLoading) return <Spinner />;
 
-  const noConnections = !companies?.length;
+  const noUnits = !units?.length;
 
   return (
     <form
@@ -165,14 +166,10 @@ export default function NewInquiryPage() {
 
       {create.isError && <Alert>{(create.error as Error).message}</Alert>}
 
-      {noConnections && (
+      {noUnits && (
         <Alert tone="warning">
-          You have no active connections yet. An inquiry can only be addressed to
-          a company you are connected with —{' '}
-          <Link href="/connections" className="font-medium underline">
-            invite a counterparty
-          </Link>{' '}
-          first.
+          There are no other active units to address this to. Ask an org admin
+          to add one.
         </Alert>
       )}
 
@@ -180,13 +177,13 @@ export default function NewInquiryPage() {
         <Field label="Send to" required>
           <Select
             required
-            value={form.providerCompanyId}
-            onChange={(e) => set('providerCompanyId')(e.target.value)}
+            value={form.providerUnitId}
+            onChange={(e) => set('providerUnitId')(e.target.value)}
           >
-            <option value="">Select a connected company…</option>
-            {companies?.map((company) => (
-              <option key={company.id} value={company.id}>
-                {company.name}
+            <option value="">Select a unit…</option>
+            {units?.map((unit) => (
+              <option key={unit.id} value={unit.id}>
+                {unit.name} ({unit.code})
               </option>
             ))}
           </Select>
@@ -503,7 +500,7 @@ export default function NewInquiryPage() {
           type="button"
           variant="secondary"
           loading={create.isPending && create.variables === false}
-          disabled={noConnections}
+          disabled={noUnits}
           onClick={() => create.mutate(false)}
         >
           Save as draft
@@ -511,7 +508,7 @@ export default function NewInquiryPage() {
         <Button
           type="submit"
           loading={create.isPending && create.variables === true}
-          disabled={noConnections}
+          disabled={noUnits}
         >
           Submit inquiry
         </Button>

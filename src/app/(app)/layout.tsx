@@ -15,35 +15,22 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  {
-    href: '/inquiries',
-    label: 'Inquiries',
-    visible: (u) => u.role !== 'SUPER_ADMIN',
-  },
-  {
-    href: '/connections',
-    label: 'Connections',
-    visible: (u) => u.role !== 'SUPER_ADMIN',
-  },
-  {
-    href: '/quarantine',
-    label: 'Quarantine',
-    visible: (u) => u.role !== 'SUPER_ADMIN',
-  },
+  { href: '/inquiries', label: 'Inquiries', visible: () => true },
+  { href: '/quarantine', label: 'Quarantine', visible: () => true },
   {
     href: '/users',
     label: 'Team',
-    visible: (u) => u.role === 'COMPANY_ADMIN',
+    visible: (u) => u.role === 'UNIT_ADMIN' || u.role === 'ORG_ADMIN',
   },
   {
-    href: '/company',
-    label: 'Company',
-    visible: (u) => u.role === 'COMPANY_ADMIN',
+    href: '/unit',
+    label: 'My unit',
+    visible: (u) => u.role === 'UNIT_ADMIN' || u.role === 'ORG_ADMIN',
   },
   {
-    href: '/admin/companies',
-    label: 'Companies',
-    visible: (u) => u.role === 'SUPER_ADMIN',
+    href: '/admin/units',
+    label: 'Units',
+    visible: (u) => u.role === 'ORG_ADMIN',
   },
 ];
 
@@ -70,11 +57,8 @@ export default function AppLayout({
     <div className="min-h-screen">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6">
-          <Link
-            href={user.role === 'SUPER_ADMIN' ? '/admin/companies' : '/inquiries'}
-            className="text-sm font-semibold text-slate-900"
-          >
-            Transport Inquiries
+          <Link href="/inquiries" className="text-sm font-semibold text-slate-900">
+            SAM Transport
           </Link>
 
           <nav className="order-3 -mx-1 flex w-full gap-1 overflow-x-auto sm:order-none sm:mx-0 sm:w-auto">

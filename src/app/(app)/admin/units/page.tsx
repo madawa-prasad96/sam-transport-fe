@@ -15,68 +15,57 @@ import {
 } from '@/components/ui';
 import { get, patch, post, qs } from '@/lib/api';
 import { formatDate } from '@/lib/format';
-import type { Company } from '@/lib/types';
+import type { Unit } from '@/lib/types';
 
 const STATUS_STYLES: Record<string, string> = {
   ACTIVE: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  PENDING: 'bg-amber-50 text-amber-800 ring-amber-200',
-  SUSPENDED: 'bg-rose-50 text-rose-700 ring-rose-200',
+  INACTIVE: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 
-export default function AdminCompaniesPage() {
+const EMPTY = {
+  name: '',
+  code: '',
+  registrationNumber: '',
+  addressLine: '',
+  country: 'Sri Lanka',
+  primaryContactName: '',
+  primaryContactEmail: '',
+  primaryContactPhone: '',
+  timezone: 'Asia/Colombo',
+};
+
+export default function AdminUnitsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: '',
-    registrationNumber: '',
-    addressLine: '',
-    country: '',
-    primaryContactName: '',
-    primaryContactEmail: '',
-    primaryContactPhone: '',
-    timezone: 'UTC',
-  });
+  const [form, setForm] = useState(EMPTY);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'companies', { search, status }],
-    queryFn: () => get<Company[]>(`/companies${qs({ search, status })}`),
+    queryKey: ['admin', 'units', { search, status }],
+    queryFn: () => get<Unit[]>(`/units${qs({ search, status })}`),
   });
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['admin', 'companies'] });
+    queryClient.invalidateQueries({ queryKey: ['admin', 'units'] });
 
-  const register = useMutation({
+  const create = useMutation({
     mutationFn: () =>
-      post('/companies', {
+      post('/units', {
         ...form,
         registrationNumber: form.registrationNumber || undefined,
       }),
     onSuccess: () => {
       setOpen(false);
-      setForm({
-        name: '',
-        registrationNumber: '',
-        addressLine: '',
-        country: '',
-        primaryContactName: '',
-        primaryContactEmail: '',
-        primaryContactPhone: '',
-        timezone: 'UTC',
-      });
+      setForm(EMPTY);
       invalidate();
     },
   });
 
-  const setCompanyStatus = useMutation({
+  const setUnitStatus = useMutation({
     mutationFn: ({ id, value }: { id: string; value: string }) =>
-      patch(`/companies/${id}/status`, { status: value }),
+      patch(`/units/${id}/status`, { status: value }),
     onSuccess: invalidate,
-  });
-
-  const resend = useMutation({
-    mutationFn: (id: string) => post(`/companies/${id}/resend-invitation`),
   });
 
   const set = (key: keyof typeof form) => (value: string) =>
@@ -86,25 +75,22 @@ export default function AdminCompaniesPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">Companies</h1>
+          <h1 className="text-lg font-semibold text-slate-900">Units</h1>
           <p className="text-sm text-slate-500">
-            Platform administration. Inquiry contents are not visible here — only
-            the companies themselves can read those.
+            Plants, departments and internally-named entities. Any active unit
+            can raise a transport inquiry with any other.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>Register a company</Button>
+        <Button onClick={() => setOpen(true)}>Add a unit</Button>
       </div>
 
-      {resend.isSuccess && (
-        <Alert tone="success">Invitation email re-sent.</Alert>
-      )}
-      {setCompanyStatus.isError && (
-        <Alert>{(setCompanyStatus.error as Error).message}</Alert>
+      {setUnitStatus.isError && (
+        <Alert>{(setUnitStatus.error as Error).message}</Alert>
       )}
 
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Search company name…"
+          placeholder="Search by name or code…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -116,8 +102,7 @@ export default function AdminCompaniesPage() {
         >
           <option value="">Any status</option>
           <option value="ACTIVE">Active</option>
-          <option value="PENDING">Pending</option>
-          <option value="SUSPENDED">Suspended</option>
+          <option value="INACTIVE">Inactive</option>
         </Select>
       </div>
 
@@ -129,85 +114,72 @@ export default function AdminCompaniesPage() {
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Company</th>
+                  <th className="px-4 py-2.5 font-medium">Unit</th>
                   <th className="px-4 py-2.5 font-medium">Primary contact</th>
-                  <th className="px-4 py-2.5 font-medium">Users</th>
+                  <th className="px-4 py-2.5 font-medium">People</th>
                   <th className="px-4 py-2.5 font-medium">Inquiries</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
                   <th className="px-4 py-2.5 font-medium" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.map((company) => (
-                  <tr key={company.id}>
+                {data.map((unit) => (
+                  <tr key={unit.id}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-slate-900">
-                        {company.name}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-900">
+                          {unit.name}
+                        </span>
+                        <Badge className="bg-slate-100 text-slate-600 ring-slate-200">
+                          {unit.code}
+                        </Badge>
                       </div>
                       <div className="text-xs text-slate-500">
-                        {company.country} · joined {formatDate(company.createdAt)}
+                        {unit.country} · added {formatDate(unit.createdAt)}
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-slate-700">
-                        {company.primaryContactName}
+                        {unit.primaryContactName}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {company.primaryContactEmail}
+                        {unit.primaryContactEmail}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {company._count?.users ?? '—'}
+                      {unit._count?.users ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {(company._count?.requestedInquiries ?? 0) +
-                        (company._count?.providedInquiries ?? 0)}
+                      {(unit._count?.requestedInquiries ?? 0) +
+                        (unit._count?.providedInquiries ?? 0)}
                     </td>
                     <td className="px-4 py-3">
                       <Badge
                         className={
-                          STATUS_STYLES[company.status] ??
+                          STATUS_STYLES[unit.status] ??
                           'bg-slate-100 text-slate-600 ring-slate-200'
                         }
                       >
-                        {company.status.toLowerCase()}
+                        {unit.status.toLowerCase()}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right whitespace-nowrap">
-                      {company.status === 'PENDING' && (
-                        <Button
-                          variant="ghost"
-                          onClick={() => resend.mutate(company.id)}
-                        >
-                          Resend invite
-                        </Button>
-                      )}
-                      {company.status === 'ACTIVE' && (
-                        <Button
-                          variant="ghost"
-                          onClick={() =>
-                            setCompanyStatus.mutate({
-                              id: company.id,
-                              value: 'SUSPENDED',
-                            })
-                          }
-                        >
-                          Suspend
-                        </Button>
-                      )}
-                      {company.status === 'SUSPENDED' && (
-                        <Button
-                          variant="ghost"
-                          onClick={() =>
-                            setCompanyStatus.mutate({
-                              id: company.id,
-                              value: 'ACTIVE',
-                            })
-                          }
-                        >
-                          Reactivate
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        loading={
+                          setUnitStatus.isPending &&
+                          setUnitStatus.variables?.id === unit.id
+                        }
+                        onClick={() =>
+                          setUnitStatus.mutate({
+                            id: unit.id,
+                            value:
+                              unit.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+                          })
+                        }
+                      >
+                        {unit.status === 'ACTIVE' ? 'Deactivate' : 'Reactivate'}
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -217,44 +189,40 @@ export default function AdminCompaniesPage() {
         </Card>
       )}
 
-      <Modal
-        open={open}
-        title="Register a company"
-        onClose={() => setOpen(false)}
-      >
+      <p className="text-xs text-slate-400">
+        A unit with inquiries still in progress cannot be deactivated — close or
+        cancel them first, so nothing is stranded mid-shipment.
+      </p>
+
+      <Modal open={open} title="Add a unit" onClose={() => setOpen(false)}>
         <form
           className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            register.mutate();
+            create.mutate();
           }}
         >
-          {register.isError && (
-            <Alert>{(register.error as Error).message}</Alert>
-          )}
+          {create.isError && <Alert>{(create.error as Error).message}</Alert>}
           <p className="text-sm text-slate-500">
-            The primary contact becomes the company&apos;s first admin and
-            receives an invitation email. The company activates when they accept.
+            A plant, a department, or an internally-named entity such as SAM
+            Lotus — all the same kind of record. Invite its people afterwards
+            from the Team screen.
           </p>
-          <Field label="Company name" required>
-            <Input
-              required
-              value={form.name}
-              onChange={(e) => set('name')(e.target.value)}
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Registration number">
-              <Input
-                value={form.registrationNumber}
-                onChange={(e) => set('registrationNumber')(e.target.value)}
-              />
-            </Field>
-            <Field label="Country" required>
+          <div className="grid gap-4 sm:grid-cols-[1fr_10rem]">
+            <Field label="Unit name" required>
               <Input
                 required
-                value={form.country}
-                onChange={(e) => set('country')(e.target.value)}
+                value={form.name}
+                onChange={(e) => set('name')(e.target.value)}
+                placeholder="SAM Lotus"
+              />
+            </Field>
+            <Field label="Code" required hint="Short, e.g. LOTUS">
+              <Input
+                required
+                value={form.code}
+                onChange={(e) => set('code')(e.target.value.toUpperCase())}
+                placeholder="LOTUS"
               />
             </Field>
           </div>
@@ -265,6 +233,21 @@ export default function AdminCompaniesPage() {
               onChange={(e) => set('addressLine')(e.target.value)}
             />
           </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Country" required>
+              <Input
+                required
+                value={form.country}
+                onChange={(e) => set('country')(e.target.value)}
+              />
+            </Field>
+            <Field label="Timezone">
+              <Input
+                value={form.timezone}
+                onChange={(e) => set('timezone')(e.target.value)}
+              />
+            </Field>
+          </div>
           <Field label="Primary contact name" required>
             <Input
               required
@@ -273,7 +256,11 @@ export default function AdminCompaniesPage() {
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Contact email" required>
+            <Field
+              label="Contact email"
+              required
+              hint="Copied on inquiries addressed to this unit."
+            >
               <Input
                 type="email"
                 required
@@ -289,12 +276,6 @@ export default function AdminCompaniesPage() {
               />
             </Field>
           </div>
-          <Field label="Timezone">
-            <Input
-              value={form.timezone}
-              onChange={(e) => set('timezone')(e.target.value)}
-            />
-          </Field>
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -303,8 +284,8 @@ export default function AdminCompaniesPage() {
             >
               Cancel
             </Button>
-            <Button type="submit" loading={register.isPending}>
-              Register and invite
+            <Button type="submit" loading={create.isPending}>
+              Add unit
             </Button>
           </div>
         </form>

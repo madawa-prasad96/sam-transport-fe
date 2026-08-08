@@ -59,7 +59,7 @@ export default function InquiriesPage() {
     queryFn: () => get<Paginated<InquirySummary>>(`/inquiries${qs(params)}`),
   });
 
-  const companyId = session?.user.companyId;
+  const unitId = session?.user.unitId;
 
   const exportCsv = () => {
     if (!data?.items.length) return;
@@ -79,14 +79,14 @@ export default function InquiriesPage() {
       'Created',
     ];
     const rows = data.items.map((inquiry) => {
-      const outgoing = inquiry.requesterCompanyId === companyId;
+      const outgoing = inquiry.requesterUnitId === unitId;
       const vehicle = inquiry.vehicleDetails[0];
       return [
         inquiry.number,
         inquiry.status,
         inquiry.priority,
         outgoing ? 'Outgoing' : 'Incoming',
-        outgoing ? inquiry.providerCompany.name : inquiry.requesterCompany.name,
+        outgoing ? inquiry.providerUnit.name : inquiry.requesterUnit.name,
         inquiry.pickupLocation,
         inquiry.deliveryLocation,
         inquiry.readyByAt,
@@ -192,7 +192,7 @@ export default function InquiriesPage() {
         <div className="rounded-lg bg-white ring-1 ring-slate-200">
           <EmptyState
             title="Nothing here yet"
-            description="When you raise an inquiry, or a connected company sends you one, it will appear in this list."
+            description="When you raise an inquiry, or another unit sends you one, it will appear in this list."
             action={
               <Link href="/inquiries/new">
                 <Button>Raise an inquiry</Button>
@@ -209,7 +209,7 @@ export default function InquiriesPage() {
               <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Inquiry</th>
-                  <th className="px-4 py-2.5 font-medium">Counterparty</th>
+                  <th className="px-4 py-2.5 font-medium">Units</th>
                   <th className="px-4 py-2.5 font-medium">Route</th>
                   <th className="px-4 py-2.5 font-medium">Required by</th>
                   <th className="px-4 py-2.5 font-medium">Vehicle</th>
@@ -218,10 +218,12 @@ export default function InquiriesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.items.map((inquiry) => {
-                  const outgoing = inquiry.requesterCompanyId === companyId;
+                  const outgoing = inquiry.requesterUnitId === unitId;
+                  const isParty =
+                    outgoing || inquiry.providerUnitId === unitId;
                   const counterparty = outgoing
-                    ? inquiry.providerCompany
-                    : inquiry.requesterCompany;
+                    ? inquiry.providerUnit
+                    : inquiry.requesterUnit;
                   const vehicle = inquiry.vehicleDetails[0];
                   return (
                     <tr key={inquiry.id} className="hover:bg-slate-50">
@@ -244,10 +246,25 @@ export default function InquiriesPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <div className="text-slate-900">{counterparty.name}</div>
-                        <div className="text-xs text-slate-500">
-                          {outgoing ? 'We requested' : 'They requested'}
-                        </div>
+                        {isParty ? (
+                          <>
+                            <div className="text-slate-900">
+                              {counterparty.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {outgoing ? 'We requested' : 'They requested'}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-slate-900">
+                              {inquiry.requesterUnit.name}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              → {inquiry.providerUnit.name}
+                            </div>
+                          </>
+                        )}
                       </td>
                       <td className="max-w-xs px-4 py-3 align-top">
                         <div className="truncate text-slate-700">

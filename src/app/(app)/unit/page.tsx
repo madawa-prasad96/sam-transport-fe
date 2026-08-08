@@ -12,16 +12,16 @@ import {
   Spinner,
 } from '@/components/ui';
 import { get, patch } from '@/lib/api';
-import type { Company } from '@/lib/types';
+import type { Unit } from '@/lib/types';
 
-export default function CompanyPage() {
+export default function MyUnitPage() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<Partial<Company>>({});
+  const [form, setForm] = useState<Partial<Unit>>({});
   const [saved, setSaved] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['company', 'me'],
-    queryFn: () => get<Company>('/companies/me'),
+    queryFn: () => get<Unit>('/units/me'),
   });
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function CompanyPage() {
 
   const save = useMutation({
     mutationFn: () =>
-      patch<Company>('/companies/me', {
+      patch<Unit>('/units/me', {
         name: form.name,
         registrationNumber: form.registrationNumber || undefined,
         addressLine: form.addressLine,
@@ -48,7 +48,7 @@ export default function CompanyPage() {
     },
   });
 
-  const set = (key: keyof Company) => (value: string) =>
+  const set = (key: keyof Unit) => (value: string) =>
     setForm((previous) => ({ ...previous, [key]: value }));
 
   if (isLoading) return <Spinner />;
@@ -62,18 +62,18 @@ export default function CompanyPage() {
       }}
     >
       <div>
-        <h1 className="text-lg font-semibold text-slate-900">Company profile</h1>
+        <h1 className="text-lg font-semibold text-slate-900">My unit</h1>
         <p className="text-sm text-slate-500">
-          The primary contact receives inquiries addressed to your company.
+          The primary contact is copied on every inquiry addressed to your unit.
         </p>
       </div>
 
       {save.isError && <Alert>{(save.error as Error).message}</Alert>}
-      {saved && <Alert tone="success">Company profile saved.</Alert>}
+      {saved && <Alert tone="success">Unit profile saved.</Alert>}
 
       <Card title="Details">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Company name" required>
+          <Field label="Unit name" required>
             <Input
               required
               value={form.name ?? ''}
