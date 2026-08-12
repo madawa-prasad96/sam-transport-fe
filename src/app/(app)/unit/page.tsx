@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Button,
@@ -16,7 +16,10 @@ import type { Unit } from '@/lib/types';
 
 export default function MyUnitPage() {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<Partial<Unit>>({});
+  // Only the fields the user has actually touched live in state. The form shown
+  // is the server record with those edits layered on top — so there is nothing
+  // to keep in sync when the query refetches, and no effect is needed.
+  const [edits, setEdits] = useState<Partial<Unit>>({});
   const [saved, setSaved] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -24,9 +27,7 @@ export default function MyUnitPage() {
     queryFn: () => get<Unit>('/units/me'),
   });
 
-  useEffect(() => {
-    if (data) setForm(data);
-  }, [data]);
+  const form: Partial<Unit> = { ...data, ...edits };
 
   const save = useMutation({
     mutationFn: () =>
@@ -43,13 +44,17 @@ export default function MyUnitPage() {
       }),
     onSuccess: () => {
       setSaved(true);
+      // Drop the local edits so the refetched record becomes the source of
+      // truth — otherwise stale edits would keep masking whatever the server
+      // actually stored (it trims and lowercases the email, for one).
+      setEdits({});
       queryClient.invalidateQueries({ queryKey: ['company', 'me'] });
       setTimeout(() => setSaved(false), 3000);
     },
   });
 
   const set = (key: keyof Unit) => (value: string) =>
-    setForm((previous) => ({ ...previous, [key]: value }));
+    setEdits((previous) => ({ ...previous, [key]: value }));
 
   if (isLoading) return <Spinner />;
 
